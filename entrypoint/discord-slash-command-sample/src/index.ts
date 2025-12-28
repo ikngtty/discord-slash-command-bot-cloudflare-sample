@@ -37,7 +37,7 @@ export default {
 		}
 		const body = await request.text();
 
-		// 署名の検証。
+		// Verify the signature.
 		if (!signatureIsValid(publicKey, body, timestamp, signature)) {
 			const err: ResponseError = {
 				title: 'Unauthorized',
@@ -46,7 +46,7 @@ export default {
 			return Response.json(err, { status: 401 });
 		}
 
-		// ※スラッシュコマンドはinteractionの内の1つとして位置付けられる。
+		// Parse request's body.
 		let interaction;
 		try {
 			interaction = JSON.parse(body);
@@ -61,6 +61,7 @@ export default {
 			throw err;
 		}
 
+		// Handle each command.
 		switch (interaction.type) {
 			case 1: // PING
 				return handlePing();
@@ -78,6 +79,7 @@ export default {
 			}
 		}
 
+		// Handle unexpected requests.
 		const err: ResponseError = {
 			title: 'Unexpected Request Body',
 			detail: "Your request's body is something different from our expectations.",

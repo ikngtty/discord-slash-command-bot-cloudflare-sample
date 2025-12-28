@@ -81,7 +81,7 @@ function makeSignature(body: string, timestamp: string): { publicKey: string; si
 }
 
 function destroySignature(signature: string): string {
-	// 1バイト目を反転させ、正しいsignatureを誤ったものにする。
+	// Make a wrong signature by flipping the first byte.
 	const buf = Uint8Array.fromHex(signature);
 	buf[0] = buf[0] ^ 0xff;
 	return buf.toHex();
