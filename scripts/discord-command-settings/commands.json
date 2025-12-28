@@ -1,18 +1,18 @@
 {
-    "dice": {
-        "name": "dice",
-        "description": "サイコロを振る🎲"
-    },
-    "echo": {
-        "name": "echo",
-        "description": "受けた発言を繰り返す🦜",
-        "options": [
-            {
-                "type": 3,
-                "name": "message",
-                "description": "メッセージ",
-                "required": true
-            }
-        ]
-    }
+  "dice": {
+    "name": "dice",
+    "description": "サイコロを振る🎲"
+  },
+  "echo": {
+    "name": "echo",
+    "description": "受けた発言を繰り返す🦜",
+    "options": [
+      {
+        "type": 3,
+        "name": "message",
+        "description": "メッセージ",
+        "required": true
+      }
+    ]
+  }
 }
