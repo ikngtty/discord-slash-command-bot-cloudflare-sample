@@ -11,7 +11,11 @@
  * Learn more at https://developers.cloudflare.com/workers/
  */
 
+import { sign } from 'tweetnacl';
+
 import { ResponseError } from './types';
+
+const TEXT_ENCODER = new TextEncoder();
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
@@ -21,7 +25,27 @@ export default {
 			throw new Error('Missing env var "DISCORD_PUBLIC_KEY".');
 		}
 
+		// Get request's headers and body.
+		const signature = request.headers.get('X-Signature-Ed25519');
+		const timestamp = request.headers.get('X-Signature-Timestamp');
+		if (signature == null || signature === '' || timestamp == null || timestamp === '') {
+			const err: ResponseError = {
+				title: 'Unauthorized',
+				detail: `Headers for signature is missing.`,
+			};
+			return Response.json(err, { status: 401 });
+		}
 		const body = await request.text();
+
+		// 署名の検証。
+		if (!signatureIsValid(publicKey, body, timestamp, signature)) {
+			const err: ResponseError = {
+				title: 'Unauthorized',
+				detail: 'Your signature is invalid.',
+			};
+			return Response.json(err, { status: 401 });
+		}
+
 		// ※スラッシュコマンドはinteractionの内の1つとして位置付けられる。
 		let interaction;
 		try {
@@ -52,3 +76,21 @@ export default {
 		return Response.json(err, { status: 400 });
 	},
 } satisfies ExportedHandler<Env>;
+
+function signatureIsValid(publicKey: string, body: string, timestamp: string, signature: string): boolean {
+	const message = timestamp + body;
+
+	let signatureBytes: Uint8Array, publicKeyBytes: Uint8Array;
+	try {
+		signatureBytes = Uint8Array.fromHex(signature);
+		publicKeyBytes = Uint8Array.fromHex(publicKey);
+	} catch (err) {
+		if (err instanceof SyntaxError) {
+			return false;
+		}
+		throw err;
+	}
+	const messageBytes = TEXT_ENCODER.encode(message);
+
+	return sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+}
