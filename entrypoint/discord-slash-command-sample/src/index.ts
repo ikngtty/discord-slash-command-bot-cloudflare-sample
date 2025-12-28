@@ -15,6 +15,12 @@ import { ResponseError } from './types';
 
 export default {
 	async fetch(request, env, ctx): Promise<Response> {
+		// Get env vars.
+		const publicKey = env.DISCORD_PUBLIC_KEY;
+		if (publicKey == null || publicKey === '') {
+			throw new Error('Missing env var "DISCORD_PUBLIC_KEY".');
+		}
+
 		const body = await request.text();
 		// ※スラッシュコマンドはinteractionの内の1つとして位置付けられる。
 		let interaction;
