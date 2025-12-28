@@ -61,14 +61,23 @@ export default {
 			throw err;
 		}
 
-		// interaction typeの1がPING
-		if (interaction.type === 1) {
-			// interaction callback typeの1がPONG
-			const body = { type: 1 };
-			return Response.json(body);
+		switch (interaction.type) {
+			case 1: // PING
+				return handlePing();
+
+			case 2: {
+				// APPLICATION COMMAND
+				const data = interaction.data;
+				switch (data.name) {
+					case 'dice':
+						return handleDice();
+					case 'echo':
+						return handleEcho(data.options);
+				}
+				break;
+			}
 		}
 
-		// その他のケースはとりあえず未対応
 		const err: ResponseError = {
 			title: 'Unexpected Request Body',
 			detail: "Your request's body is something different from our expectations.",
@@ -93,4 +102,38 @@ function signatureIsValid(publicKey: string, body: string, timestamp: string, si
 	const messageBytes = TEXT_ENCODER.encode(message);
 
 	return sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+}
+
+function handlePing(): Response {
+	const body = { type: 1 }; // PONG
+	return Response.json(body);
+}
+
+function handleDice(): Response {
+	const roll = getRandomInt(6) + 1;
+	const body = {
+		type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
+		data: {
+			content: `${roll}`,
+		},
+	};
+	return Response.json(body, { headers: { 'Content-Type': 'application/json' } });
+}
+
+function handleEcho(options: any[]): Response {
+	const optionMessage = options.find((option: any) => option.name === 'message');
+	const message = optionMessage.value;
+
+	const body = {
+		type: 4, // CHANNEL_MESSAGE_WITH_SOURCE
+		data: {
+			content: message,
+		},
+	};
+	return Response.json(body, { headers: { 'Content-Type': 'application/json' } });
+}
+
+// 0 to (max - 1)
+function getRandomInt(max: number): number {
+	return Math.floor(Math.random() * max);
 }
